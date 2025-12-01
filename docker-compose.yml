@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16
+    # Use pg_bigm enabled PostgreSQL image for BIGRAM search support
+    # Using Docker Hub image instead of ghcr.io for better availability
+    image: clwmem/postgres16-bigm:latest
     container_name: worlds_postgres
     environment:
       POSTGRES_USER: worlds_user

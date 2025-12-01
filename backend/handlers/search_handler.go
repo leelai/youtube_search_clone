@@ -14,16 +14,19 @@ import (
 type SearchHandler struct {
 	searchService      *services.SearchService
 	suggestionsService *services.SuggestionsService
+	compareService     *services.CompareService
 }
 
 // NewSearchHandler creates a new SearchHandler
 func NewSearchHandler(
 	searchService *services.SearchService,
 	suggestionsService *services.SuggestionsService,
+	compareService *services.CompareService,
 ) *SearchHandler {
 	return &SearchHandler{
 		searchService:      searchService,
 		suggestionsService: suggestionsService,
+		compareService:     compareService,
 	}
 }
 
@@ -216,4 +219,71 @@ func (h *SearchHandler) GetTrending(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"keywords": results,
 	})
+}
+
+// ============================================================
+// GET /api/search/compare
+// ============================================================
+// Returns search results comparing TRGM vs BIGRAM algorithms.
+// This is for the Search Modes Lab page.
+// Query params:
+//   - keyword (required): the search query
+//   - mode (required): "trgm" | "bigram" | "both"
+//
+// Response:
+//
+//	{
+//	  "keyword": "garmin",
+//	  "mode": "both",
+//	  "trgmResults": [
+//	    {
+//	      "id": "uuid",
+//	      "title": "Garmin 840 北高實測 World",
+//	      "description": "...",
+//	      "score": 0.83
+//	    }
+//	  ],
+//	  "bigramResults": [
+//	    {
+//	      "id": "uuid",
+//	      "title": "Garmin Edge 設定教學",
+//	      "description": "...",
+//	      "score": 0.91
+//	    }
+//	  ]
+//	}
+func (h *SearchHandler) HandleSearchCompare(c *gin.Context) {
+	keyword := c.Query("keyword")
+	if keyword == "" {
+		c.JSON(http.StatusOK, services.SearchCompareResponse{
+			Keyword:       "",
+			Mode:          services.SearchModeTrgm,
+			TrgmResults:   []services.CompareWorldResult{},
+			BigramResults: []services.CompareWorldResult{},
+		})
+		return
+	}
+
+	modeStr := c.Query("mode")
+	var mode services.SearchMode
+	switch modeStr {
+	case "trgm":
+		mode = services.SearchModeTrgm
+	case "bigram":
+		mode = services.SearchModeBigram
+	case "both":
+		mode = services.SearchModeBoth
+	default:
+		utils.RespondBadRequest(c, "mode must be 'trgm', 'bigram', or 'both'")
+		return
+	}
+
+	const limit = 20
+	response, err := h.compareService.SearchCompare(c.Request.Context(), keyword, mode, limit)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to compare search: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

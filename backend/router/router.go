@@ -47,6 +47,9 @@ func New(
 
 			// GET /api/search/trending - Get trending keywords
 			search.GET("/trending", searchHandler.GetTrending)
+
+			// GET /api/search/compare - Compare TRGM vs BIGRAM search (Search Modes Lab)
+			search.GET("/compare", searchHandler.HandleSearchCompare)
 		}
 
 		// Worlds endpoints

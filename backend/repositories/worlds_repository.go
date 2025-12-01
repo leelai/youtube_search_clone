@@ -174,3 +174,83 @@ func (r *WorldsRepository) SearchCombined(ctx context.Context, keyword string, l
 	
 	return results, rows.Err()
 }
+
+// ============================================================
+// Search Compare Methods (for Search Modes Lab)
+// ============================================================
+
+// FindByTitleTrgm searches worlds using pg_trgm similarity matching
+// Returns worlds sorted by similarity score descending
+func (r *WorldsRepository) FindByTitleTrgm(ctx context.Context, keyword string, limit int) ([]WorldWithSimilarity, error) {
+	query := `
+		SELECT id, title, description, created_at, 
+		       similarity(LOWER(title), LOWER($1)) as sim
+		FROM worlds
+		WHERE LOWER(title) % LOWER($1)
+		ORDER BY sim DESC, created_at DESC
+		LIMIT $2
+	`
+	
+	rows, err := r.pool.Query(ctx, query, keyword, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var results []WorldWithSimilarity
+	for rows.Next() {
+		var ws WorldWithSimilarity
+		if err := rows.Scan(
+			&ws.World.ID,
+			&ws.World.Title,
+			&ws.World.Description,
+			&ws.World.CreatedAt,
+			&ws.Similarity,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, ws)
+	}
+	
+	return results, rows.Err()
+}
+
+// FindByTitleBigram searches worlds using pg_bigm bigram matching
+// Uses the likequery function to convert search term to LIKE pattern
+// Returns worlds sorted by bigm_similarity score descending
+func (r *WorldsRepository) FindByTitleBigram(ctx context.Context, keyword string, limit int) ([]WorldWithSimilarity, error) {
+	// pg_bigm uses likequery() to convert keyword to LIKE pattern
+	// and bigm_similarity() to get similarity score
+	// Use LOWER() for case-insensitive matching
+	query := `
+		SELECT id, title, description, created_at,
+		       bigm_similarity(LOWER(title), LOWER($1)) as sim
+		FROM worlds
+		WHERE LOWER(title) LIKE LOWER(likequery($1))
+		ORDER BY sim DESC, created_at DESC
+		LIMIT $2
+	`
+	
+	rows, err := r.pool.Query(ctx, query, keyword, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var results []WorldWithSimilarity
+	for rows.Next() {
+		var ws WorldWithSimilarity
+		if err := rows.Scan(
+			&ws.World.ID,
+			&ws.World.Title,
+			&ws.World.Description,
+			&ws.World.CreatedAt,
+			&ws.Similarity,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, ws)
+	}
+	
+	return results, rows.Err()
+}

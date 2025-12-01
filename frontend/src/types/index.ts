@@ -81,3 +81,23 @@ export interface SearchState {
 
 // Demo user ID for testing
 export const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+// ============================================================
+// Search Compare Types (Search Modes Lab)
+// ============================================================
+
+export type SearchMode = 'trgm' | 'bigram' | 'both';
+
+export interface CompareWorldResult {
+  id: string;
+  title: string;
+  description: string;
+  score: number;
+}
+
+export interface SearchCompareResponse {
+  keyword: string;
+  mode: SearchMode;
+  trgmResults: CompareWorldResult[];
+  bigramResults: CompareWorldResult[];
+}

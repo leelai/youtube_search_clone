@@ -44,9 +44,10 @@ func main() {
 	rankingService := services.NewRankingService(searchRepo, logsRepo)
 	suggestionsService := services.NewSuggestionsService(worldsRepo, searchRepo, logsRepo, rankingService)
 	searchService := services.NewSearchService(worldsRepo, searchRepo, logsRepo)
+	compareService := services.NewCompareService(worldsRepo)
 
 	// Initialize handlers
-	searchHandler := handlers.NewSearchHandler(searchService, suggestionsService)
+	searchHandler := handlers.NewSearchHandler(searchService, suggestionsService, compareService)
 	worldsHandler := handlers.NewWorldsHandler(searchService)
 
 	// Create router

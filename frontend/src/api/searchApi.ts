@@ -4,6 +4,8 @@ import type {
   TrendingResponse,
   SearchInputRequest,
   ClickRequest,
+  SearchMode,
+  SearchCompareResponse,
 } from '../types';
 
 // API base URL - uses Vite proxy in development, direct URL in production
@@ -94,3 +96,22 @@ export async function logClick(click: ClickRequest): Promise<void> {
     throw new Error(`Failed to log click: ${response.statusText}`);
   }
 }
+
+/**
+ * Fetch search compare results for TRGM vs BIGRAM comparison
+ * Used by the Search Modes Lab page
+ */
+export async function fetchSearchCompare(
+  keyword: string,
+  mode: SearchMode
+): Promise<SearchCompareResponse> {
+  const params = new URLSearchParams({ keyword, mode });
+  const response = await fetch(`${API_BASE}/api/search/compare?${params}`);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch search compare results: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
