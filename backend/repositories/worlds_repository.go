@@ -25,7 +25,7 @@ func (r *WorldsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.W
 		FROM worlds
 		WHERE id = $1
 	`
-	
+
 	var world models.World
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&world.ID,
@@ -36,7 +36,7 @@ func (r *WorldsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.W
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &world, nil
 }
 
@@ -55,13 +55,13 @@ func (r *WorldsRepository) SearchByPrefix(ctx context.Context, prefix string, li
 		ORDER BY created_at DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.pool.Query(ctx, query, prefix, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var worlds []models.World
 	for rows.Next() {
 		var w models.World
@@ -70,7 +70,7 @@ func (r *WorldsRepository) SearchByPrefix(ctx context.Context, prefix string, li
 		}
 		worlds = append(worlds, w)
 	}
-	
+
 	return worlds, rows.Err()
 }
 
@@ -81,17 +81,17 @@ func (r *WorldsRepository) SearchByFuzzy(ctx context.Context, keyword string, li
 		SELECT id, title, description, created_at, 
 		       similarity(LOWER(title), LOWER($1)) as sim
 		FROM worlds
-		WHERE LOWER(title) % LOWER($1)
+		WHERE similarity(LOWER(title), LOWER($1)) > 0.1
 		ORDER BY sim DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.pool.Query(ctx, query, keyword, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var results []WorldWithSimilarity
 	for rows.Next() {
 		var ws WorldWithSimilarity
@@ -106,7 +106,7 @@ func (r *WorldsRepository) SearchByFuzzy(ctx context.Context, keyword string, li
 		}
 		results = append(results, ws)
 	}
-	
+
 	return results, rows.Err()
 }
 
@@ -127,7 +127,7 @@ func (r *WorldsRepository) SearchCombined(ctx context.Context, keyword string, l
 			       similarity(LOWER(title), LOWER($1)) as sim,
 			       2 as match_type
 			FROM worlds
-			WHERE LOWER(title) % LOWER($1)
+			WHERE similarity(LOWER(title), LOWER($1)) > 0.1
 			  AND id NOT IN (SELECT id FROM prefix_matches)
 		),
 		contains_matches AS (
@@ -150,13 +150,13 @@ func (r *WorldsRepository) SearchCombined(ctx context.Context, keyword string, l
 		ORDER BY match_type, sim DESC, created_at DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.pool.Query(ctx, query, keyword, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var results []WorldWithSimilarity
 	for rows.Next() {
 		var ws WorldWithSimilarity
@@ -171,7 +171,7 @@ func (r *WorldsRepository) SearchCombined(ctx context.Context, keyword string, l
 		}
 		results = append(results, ws)
 	}
-	
+
 	return results, rows.Err()
 }
 
@@ -181,22 +181,25 @@ func (r *WorldsRepository) SearchCombined(ctx context.Context, keyword string, l
 
 // FindByTitleTrgm searches worlds using pg_trgm similarity matching
 // Returns worlds sorted by similarity score descending
+// Uses similarity threshold of 0.1 for better recall with short keywords
 func (r *WorldsRepository) FindByTitleTrgm(ctx context.Context, keyword string, limit int) ([]WorldWithSimilarity, error) {
+	// Use similarity() function directly with threshold comparison
+	// This avoids relying on the % operator which uses a global threshold
 	query := `
 		SELECT id, title, description, created_at, 
 		       similarity(LOWER(title), LOWER($1)) as sim
 		FROM worlds
-		WHERE LOWER(title) % LOWER($1)
+		WHERE similarity(LOWER(title), LOWER($1)) > 0.1
 		ORDER BY sim DESC, created_at DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.pool.Query(ctx, query, keyword, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var results []WorldWithSimilarity
 	for rows.Next() {
 		var ws WorldWithSimilarity
@@ -211,7 +214,7 @@ func (r *WorldsRepository) FindByTitleTrgm(ctx context.Context, keyword string, 
 		}
 		results = append(results, ws)
 	}
-	
+
 	return results, rows.Err()
 }
 
@@ -230,13 +233,13 @@ func (r *WorldsRepository) FindByTitleBigram(ctx context.Context, keyword string
 		ORDER BY sim DESC, created_at DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.pool.Query(ctx, query, keyword, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var results []WorldWithSimilarity
 	for rows.Next() {
 		var ws WorldWithSimilarity
@@ -251,6 +254,6 @@ func (r *WorldsRepository) FindByTitleBigram(ctx context.Context, keyword string
 		}
 		results = append(results, ws)
 	}
-	
+
 	return results, rows.Err()
 }

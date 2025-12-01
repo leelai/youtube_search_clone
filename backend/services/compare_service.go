@@ -146,4 +146,3 @@ func (s *CompareService) convertToCompareResults(results []repositories.WorldWit
 	}
 	return compareResults
 }
-
