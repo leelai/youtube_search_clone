@@ -27,7 +27,7 @@ K6_SCRIPT="$PROJECT_DIR/k6/search_test.js"
 # Test configuration
 K6_VUS="${K6_VUS:-10}"
 K6_DURATION="${K6_DURATION:-30s}"
-K6_BASE_URL="${K6_BASE_URL:-http://localhost:8080}"
+K6_BASE_URL="${K6_BASE_URL:-http://localhost:8081}"
 
 # Data sizes to test (can be overridden via command line args)
 if [ $# -gt 0 ]; then

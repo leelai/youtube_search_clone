@@ -89,7 +89,7 @@ seed-500k:
 # K6 test configuration (can be overridden)
 K6_VUS ?= 10
 K6_DURATION ?= 30s
-K6_BASE_URL ?= http://localhost:8080
+K6_BASE_URL ?= http://localhost:8081
 
 k6-test:
 	@echo "🚀 Running k6 load test..."
