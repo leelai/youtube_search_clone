@@ -1,0 +1,5 @@
+requests==2.31.0
+beautifulsoup4==4.12.2
+psycopg2-binary==2.9.9
+urllib3==2.1.0
+
