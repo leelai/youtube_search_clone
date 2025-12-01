@@ -228,6 +228,92 @@ python scripts/seed_agnews_remote.py --force-download --limit 20000
 python scripts/seed.py
 ```
 
+## K6 效能測試
+
+本專案包含完整的 k6 負載測試套件，可測試不同資料量級別下的搜索 API 效能。
+
+### 前置需求
+
+```bash
+# 安裝 k6
+brew install k6        # macOS
+# 或參考 https://k6.io/docs/getting-started/installation/
+
+# 安裝 jq (用於解析 JSON)
+brew install jq        # macOS
+apt install jq         # Linux
+```
+
+### 使用 Makefile
+
+```bash
+# 查看所有可用命令
+make help
+
+# 準備特定數量的資料
+make seed-1k           # 1,000 筆
+make seed-10k          # 10,000 筆
+make seed-100k         # 100,000 筆
+
+# 執行 k6 測試 (使用當前資料庫資料)
+make k6-test
+
+# 完整基準測試 (準備資料 + 執行測試)
+make benchmark-20k     # 測試 20K 資料
+make benchmark-100k    # 測試 100K 資料
+
+# 執行所有級別的完整基準測試套件
+make benchmark-all
+```
+
+### 自訂測試參數
+
+```bash
+# 自訂虛擬用戶數和測試時間
+K6_VUS=20 K6_DURATION=60s make k6-test
+
+# 自訂 API URL
+K6_BASE_URL=http://api.example.com:8080 make k6-test
+```
+
+### 直接執行 benchmark 腳本
+
+```bash
+# 執行所有級別測試
+./scripts/run_benchmark.sh
+
+# 只測試特定級別
+./scripts/run_benchmark.sh 1k 10k 50k
+```
+
+### 測試輸出範例
+
+```
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    Search API Benchmark Results                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║   Size   │   p50    │   p95    │   p99    │   RPS    │ Status            ║
+╠══════════╪══════════╪══════════╪══════════╪══════════╪═══════════════════╣
+║       1k │   12.5ms │   25.3ms │   45.2ms │    850.2 │ OK                ║
+║       5k │   15.2ms │   32.1ms │   58.4ms │    720.5 │ OK                ║
+║      10k │   22.8ms │   48.6ms │   85.3ms │    580.1 │ OK                ║
+║      50k │   45.1ms │   95.2ms │  180.5ms │    320.8 │ WARN              ║
+╚══════════╧══════════╧══════════╧══════════╧══════════╧═══════════════════╝
+
+Response Time (p95) by Data Size:
+      1k │ ████████░░░░░░░░░░░░░░░░░░░░░░  25.3ms
+      5k │ ██████████░░░░░░░░░░░░░░░░░░░░  32.1ms
+     10k │ ███████████████░░░░░░░░░░░░░░░  48.6ms
+     50k │ ██████████████████████████████  95.2ms
+```
+
+### 測試結果檔案
+
+測試結果會儲存在 `k6/results/` 目錄：
+- `summary.json` - 最新測試的完整結果
+- `result_{size}.json` - 各級別的測試結果
+- `benchmark_results.csv` - 所有測試的彙總 CSV
+
 ## 配置
 
 ### 環境變量

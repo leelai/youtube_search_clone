@@ -56,3 +56,5 @@ ENV/
 # Database backups
 backups/
 
+datasets/
+k6/results/
