@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-void-950 text-void-100 font-sans antialiased;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-void-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-void-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-void-600;
+}
+
+/* Selection */
+::selection {
+  @apply bg-cosmos-500/30 text-white;
+}
+
+/* Focus ring */
+*:focus-visible {
+  @apply outline-none ring-2 ring-cosmos-500/50 ring-offset-2 ring-offset-void-950;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Prose styles for world detail */
+.prose {
+  @apply text-void-300;
+}
+
+.prose p {
+  @apply mb-4;
+}
+
+.prose h2 {
+  @apply text-xl font-display font-semibold text-white mt-8 mb-4;
+}
+
+.prose h3 {
+  @apply text-lg font-display font-medium text-void-100 mt-6 mb-3;
+}
+
+.prose a {
+  @apply text-cosmos-400 hover:text-cosmos-300 underline underline-offset-2;
+}
+
+.prose code {
+  @apply px-1.5 py-0.5 bg-void-800 rounded text-cosmos-300 font-mono text-sm;
+}
+
+.prose pre {
+  @apply p-4 bg-void-900 rounded-lg overflow-x-auto;
+}
+
+.prose pre code {
+  @apply p-0 bg-transparent;
+}
+
+.prose ul {
+  @apply list-disc list-inside mb-4;
+}
+
+.prose ol {
+  @apply list-decimal list-inside mb-4;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+.prose blockquote {
+  @apply pl-4 border-l-2 border-cosmos-500/50 italic text-void-400;
+}
+

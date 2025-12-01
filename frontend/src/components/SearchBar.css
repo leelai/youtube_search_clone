@@ -1,0 +1,133 @@
+.search-bar-container {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+}
+
+.search-form {
+  position: relative;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--surface-elevated);
+  border: 2px solid var(--border-color);
+  border-radius: 28px;
+  padding: 0 6px 0 18px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.search-input-wrapper.open {
+  border-radius: 28px 28px 0 0;
+  border-bottom-color: var(--border-subtle);
+}
+
+.search-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 16px 14px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  color: var(--primary-color);
+  margin-right: 8px;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.clear-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--surface-subtle);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  margin-right: 8px;
+}
+
+.clear-button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.search-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.search-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.search-button:active {
+  transform: translateY(0);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .search-input-wrapper {
+    padding: 0 4px 0 14px;
+  }
+
+  .search-input {
+    padding: 14px 10px;
+    font-size: 0.95rem;
+  }
+
+  .search-button {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+  }
+}
+

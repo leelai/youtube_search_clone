@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: worlds_postgres
+    environment:
+      POSTGRES_USER: worlds_user
+      POSTGRES_PASSWORD: worlds_password
+      POSTGRES_DB: worlds_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U worlds_user -d worlds_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - worlds_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: worlds_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - worlds_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: worlds_backend
+    environment:
+      POSTGRES_DSN: "postgres://worlds_user:worlds_password@postgres:5432/worlds_db?sslmode=disable"
+      REDIS_ADDR: "redis:6379"
+      SERVER_PORT: "8080"
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - worlds_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    container_name: worlds_frontend
+    ports:
+      - "3100:80"
+    depends_on:
+      - backend
+    networks:
+      - worlds_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  worlds_network:
+    driver: bridge

@@ -1,0 +1,176 @@
+package repositories
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/worlds-search/backend/models"
+)
+
+// WorldsRepository handles database operations for worlds
+type WorldsRepository struct {
+	pool *pgxpool.Pool
+}
+
+// NewWorldsRepository creates a new WorldsRepository
+func NewWorldsRepository(pool *pgxpool.Pool) *WorldsRepository {
+	return &WorldsRepository{pool: pool}
+}
+
+// GetByID fetches a world by its ID
+func (r *WorldsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.World, error) {
+	query := `
+		SELECT id, title, description, created_at
+		FROM worlds
+		WHERE id = $1
+	`
+	
+	var world models.World
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&world.ID,
+		&world.Title,
+		&world.Description,
+		&world.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &world, nil
+}
+
+// WorldWithSimilarity holds a world with its pg_trgm similarity score
+type WorldWithSimilarity struct {
+	World      models.World
+	Similarity float64
+}
+
+// SearchByPrefix finds worlds where title starts with the given prefix
+func (r *WorldsRepository) SearchByPrefix(ctx context.Context, prefix string, limit int) ([]models.World, error) {
+	query := `
+		SELECT id, title, description, created_at
+		FROM worlds
+		WHERE LOWER(title) LIKE LOWER($1) || '%'
+		ORDER BY created_at DESC
+		LIMIT $2
+	`
+	
+	rows, err := r.pool.Query(ctx, query, prefix, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var worlds []models.World
+	for rows.Next() {
+		var w models.World
+		if err := rows.Scan(&w.ID, &w.Title, &w.Description, &w.CreatedAt); err != nil {
+			return nil, err
+		}
+		worlds = append(worlds, w)
+	}
+	
+	return worlds, rows.Err()
+}
+
+// SearchByFuzzy finds worlds using pg_trgm similarity matching
+// Returns worlds with similarity score > 0.1
+func (r *WorldsRepository) SearchByFuzzy(ctx context.Context, keyword string, limit int) ([]WorldWithSimilarity, error) {
+	query := `
+		SELECT id, title, description, created_at, 
+		       similarity(LOWER(title), LOWER($1)) as sim
+		FROM worlds
+		WHERE LOWER(title) % LOWER($1)
+		ORDER BY sim DESC
+		LIMIT $2
+	`
+	
+	rows, err := r.pool.Query(ctx, query, keyword, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var results []WorldWithSimilarity
+	for rows.Next() {
+		var ws WorldWithSimilarity
+		if err := rows.Scan(
+			&ws.World.ID,
+			&ws.World.Title,
+			&ws.World.Description,
+			&ws.World.CreatedAt,
+			&ws.Similarity,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, ws)
+	}
+	
+	return results, rows.Err()
+}
+
+// SearchCombined searches worlds using both prefix and fuzzy matching
+// This is used for the search results page
+func (r *WorldsRepository) SearchCombined(ctx context.Context, keyword string, limit int) ([]WorldWithSimilarity, error) {
+	// Use a combined query that gets prefix matches first, then fuzzy matches
+	query := `
+		WITH prefix_matches AS (
+			SELECT id, title, description, created_at, 
+			       1.0::float as sim,
+			       1 as match_type
+			FROM worlds
+			WHERE LOWER(title) LIKE LOWER($1) || '%'
+		),
+		fuzzy_matches AS (
+			SELECT id, title, description, created_at,
+			       similarity(LOWER(title), LOWER($1)) as sim,
+			       2 as match_type
+			FROM worlds
+			WHERE LOWER(title) % LOWER($1)
+			  AND id NOT IN (SELECT id FROM prefix_matches)
+		),
+		contains_matches AS (
+			SELECT id, title, description, created_at,
+			       0.5::float as sim,
+			       3 as match_type
+			FROM worlds
+			WHERE LOWER(title) LIKE '%' || LOWER($1) || '%'
+			  AND id NOT IN (SELECT id FROM prefix_matches)
+			  AND id NOT IN (SELECT id FROM fuzzy_matches)
+		)
+		SELECT id, title, description, created_at, sim
+		FROM (
+			SELECT * FROM prefix_matches
+			UNION ALL
+			SELECT * FROM fuzzy_matches
+			UNION ALL
+			SELECT * FROM contains_matches
+		) combined
+		ORDER BY match_type, sim DESC, created_at DESC
+		LIMIT $2
+	`
+	
+	rows, err := r.pool.Query(ctx, query, keyword, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var results []WorldWithSimilarity
+	for rows.Next() {
+		var ws WorldWithSimilarity
+		if err := rows.Scan(
+			&ws.World.ID,
+			&ws.World.Title,
+			&ws.World.Description,
+			&ws.World.CreatedAt,
+			&ws.Similarity,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, ws)
+	}
+	
+	return results, rows.Err()
+}
