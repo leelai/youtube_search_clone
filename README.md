@@ -186,6 +186,48 @@ npm run build
 ### Redis trending_search ZSET
 存儲全局熱門搜索關鍵字及其分數。
 
+## 數據種子腳本
+
+### scripts/seed_agnews_remote.py
+
+從 Hugging Face 下載 AG News 資料集並導入到 `worlds` 表。
+
+```bash
+# 安裝依賴
+pip install requests psycopg2-binary
+
+# 下載並插入 20,000 筆資料（隨機洗牌）
+python scripts/seed_agnews_remote.py --limit 20000 --shuffle
+
+# 插入 50,000 筆資料
+python scripts/seed_agnews_remote.py --limit 50000 --shuffle
+
+# 只下載檔案，不寫入資料庫
+python scripts/seed_agnews_remote.py --download-only
+
+# 強制重新下載
+python scripts/seed_agnews_remote.py --force-download --limit 20000
+```
+
+**CLI 參數：**
+
+| 參數 | 說明 | 預設值 |
+|------|------|--------|
+| `--limit` | 要插入的資料列數 | 20000 |
+| `--shuffle` | 插入前隨機洗牌 | False |
+| `--force-download` | 強制重新下載檔案 | False |
+| `--download-only` | 只下載檔案，不寫入資料庫 | False |
+| `--url` | 自訂下載 URL | Hugging Face URL |
+| `--output` | 本地儲存路徑 | `datasets/agnews.jsonl.gz` |
+
+### scripts/seed.py
+
+從 Wikipedia、ArXiv、Google Books 等 API 抓取資料並導入資料庫。
+
+```bash
+python scripts/seed.py
+```
+
 ## 配置
 
 ### 環境變量
