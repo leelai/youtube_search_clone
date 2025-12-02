@@ -120,11 +120,11 @@ run_k6_test() {
     
     # Parse results from JSON
     if [ -f "$output_file" ]; then
-        local p50=$(jq -r '.metrics.http_req_duration.values["p(50)"] // 0' "$output_file")
-        local p95=$(jq -r '.metrics.http_req_duration.values["p(95)"] // 0' "$output_file")
-        local p99=$(jq -r '.metrics.http_req_duration.values["p(99)"] // 0' "$output_file")
-        local rps=$(jq -r '.metrics.http_reqs.values.rate // 0' "$output_file")
-        local error_rate=$(jq -r '.metrics.errors.values.rate // 0' "$output_file")
+        local p50=$(jq -r '.metrics.http_req_duration["p(50)"] // 0' "$output_file")
+        local p95=$(jq -r '.metrics.http_req_duration["p(95)"] // 0' "$output_file")
+        local p99=$(jq -r '.metrics.http_req_duration["p(99)"] // 0' "$output_file")
+        local rps=$(jq -r '.metrics.http_reqs.rate // 0' "$output_file")
+        local error_rate=$(jq -r '.metrics.errors.value // 0' "$output_file")
         
         # Store results
         RESULT_SIZES+=("$size")
