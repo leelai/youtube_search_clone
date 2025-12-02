@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/worlds-search/backend/repositories"
@@ -31,6 +32,7 @@ type SearchCompareResponse struct {
 	Mode          SearchMode           `json:"mode"`
 	TrgmResults   []CompareWorldResult `json:"trgmResults"`
 	BigramResults []CompareWorldResult `json:"bigramResults"`
+	ElapsedMs     int64                `json:"elapsedMs"` // 後端處理時間（毫秒）
 }
 
 // CompareService handles search comparison operations
@@ -99,6 +101,8 @@ func (s *CompareService) SearchBoth(ctx context.Context, keyword string, limit i
 
 // SearchCompare performs search based on mode and returns formatted response
 func (s *CompareService) SearchCompare(ctx context.Context, keyword string, mode SearchMode, limit int) (*SearchCompareResponse, error) {
+	startTime := time.Now()
+
 	response := &SearchCompareResponse{
 		Keyword:       keyword,
 		Mode:          mode,
@@ -130,6 +134,7 @@ func (s *CompareService) SearchCompare(ctx context.Context, keyword string, mode
 		response.BigramResults = bigram
 	}
 
+	response.ElapsedMs = time.Since(startTime).Milliseconds()
 	return response, nil
 }
 

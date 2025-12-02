@@ -141,6 +141,8 @@ export function SearchModesLabPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [backendElapsedMs, setBackendElapsedMs] = useState<number | null>(null);
+  const [totalElapsedMs, setTotalElapsedMs] = useState<number | null>(null);
 
   const handleSearch = useCallback(async () => {
     if (!keyword.trim()) {
@@ -151,15 +153,23 @@ export function SearchModesLabPage() {
     setError(null);
     setHasSearched(true);
 
+    const startTime = performance.now();
+
     try {
       const response = await fetchSearchCompare(keyword, mode);
+      const endTime = performance.now();
+
       setTrgmResults(response.trgmResults);
       setBigramResults(response.bigramResults);
+      setBackendElapsedMs(response.elapsedMs);
+      setTotalElapsedMs(Math.round(endTime - startTime));
     } catch (err) {
       console.error('Search compare failed:', err);
       setError('搜尋比較時發生錯誤，請稍後再試');
       setTrgmResults([]);
       setBigramResults([]);
+      setBackendElapsedMs(null);
+      setTotalElapsedMs(null);
     } finally {
       setIsLoading(false);
     }
@@ -308,6 +318,20 @@ export function SearchModesLabPage() {
         {/* Results display */}
         {hasSearched && (
           <>
+            {/* Elapsed time display */}
+            {!isLoading && backendElapsedMs !== null && totalElapsedMs !== null && (
+              <div className="mb-4 text-sm text-void-500 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>
+                  後端: <span className="text-cosmos-400 font-mono">{backendElapsedMs}ms</span>
+                  {' / '}
+                  總計: <span className="text-nebula-400 font-mono">{totalElapsedMs}ms</span>
+                </span>
+              </div>
+            )}
+
             {/* Single column for trgm or bigram mode */}
             {mode === 'trgm' && (
               <div className="max-w-2xl mx-auto">

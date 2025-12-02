@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/worlds-search/backend/models"
@@ -31,8 +32,9 @@ func NewSearchService(
 
 // SearchResults is the response for search results
 type SearchResults struct {
-	Keyword string             `json:"keyword"`
-	Worlds  []models.WorldCard `json:"worlds"`
+	Keyword   string             `json:"keyword"`
+	Worlds    []models.WorldCard `json:"worlds"`
+	ElapsedMs int64              `json:"elapsedMs"` // 後端處理時間（毫秒）
 }
 
 // LogSearchInput logs a search input and updates trending
@@ -110,12 +112,15 @@ func (s *SearchService) LogClick(ctx context.Context, click *models.ClickInput) 
 
 // SearchWorlds searches for worlds matching the keyword
 func (s *SearchService) SearchWorlds(ctx context.Context, keyword string, userID *uuid.UUID) (*SearchResults, error) {
+	startTime := time.Now()
+
 	normalizedKeyword := utils.NormalizeKeyword(keyword)
 
 	if normalizedKeyword == "" {
 		return &SearchResults{
-			Keyword: keyword,
-			Worlds:  []models.WorldCard{},
+			Keyword:   keyword,
+			Worlds:    []models.WorldCard{},
+			ElapsedMs: time.Since(startTime).Milliseconds(),
 		}, nil
 	}
 
@@ -137,8 +142,9 @@ func (s *SearchService) SearchWorlds(ctx context.Context, keyword string, userID
 	}
 
 	return &SearchResults{
-		Keyword: keyword,
-		Worlds:  worlds,
+		Keyword:   keyword,
+		Worlds:    worlds,
+		ElapsedMs: time.Since(startTime).Milliseconds(),
 	}, nil
 }
 

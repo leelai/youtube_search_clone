@@ -13,24 +13,36 @@ export function SearchPage() {
   const [results, setResults] = useState<WorldCardType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [backendElapsedMs, setBackendElapsedMs] = useState<number | null>(null);
+  const [totalElapsedMs, setTotalElapsedMs] = useState<number | null>(null);
 
   // Fetch search results
   const fetchResults = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
+      setBackendElapsedMs(null);
+      setTotalElapsedMs(null);
       return;
     }
 
     setIsLoading(true);
     setError(null);
 
+    const startTime = performance.now();
+
     try {
       const response = await getSearchResults(searchQuery, DEMO_USER_ID);
+      const endTime = performance.now();
+      
       setResults(response.worlds);
+      setBackendElapsedMs(response.elapsedMs);
+      setTotalElapsedMs(Math.round(endTime - startTime));
     } catch (err) {
       console.error('Failed to fetch search results:', err);
       setError('搜尋時發生錯誤，請稍後再試');
       setResults([]);
+      setBackendElapsedMs(null);
+      setTotalElapsedMs(null);
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +75,11 @@ export function SearchPage() {
             {!isLoading && (
               <p className="mt-1 text-sm text-void-500">
                 找到 {results.length} 個 World
+                {backendElapsedMs !== null && totalElapsedMs !== null && (
+                  <span className="ml-2 text-void-600">
+                    （後端: {backendElapsedMs}ms / 總計: {totalElapsedMs}ms）
+                  </span>
+                )}
               </p>
             )}
           </div>

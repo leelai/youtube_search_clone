@@ -42,6 +42,7 @@ export interface World {
 export interface SearchResultsResponse {
   keyword: string;
   worlds: WorldCard[];
+  elapsedMs: number; // 後端處理時間（毫秒）
 }
 
 export interface TrendingResponse {
@@ -100,4 +101,5 @@ export interface SearchCompareResponse {
   mode: SearchMode;
   trgmResults: CompareWorldResult[];
   bigramResults: CompareWorldResult[];
+  elapsedMs: number; // 後端處理時間（毫秒）
 }
