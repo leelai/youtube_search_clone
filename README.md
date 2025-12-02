@@ -35,6 +35,10 @@ final_score = prefix_score + personal_score + trending_score + fuzzy_score + ctr
 - **前端**：React + Vite + TypeScript + Tailwind CSS
 - **容器化**：Docker + Docker Compose
 
+## 📚 延伸文檔
+
+- **[搜尋優化研究筆記](docs/SEARCH_OPTIMIZATION.md)** - pg_trgm 索引與 SQL 查詢效能分析
+
 ## 快速開始
 
 ### 使用 Docker Compose
