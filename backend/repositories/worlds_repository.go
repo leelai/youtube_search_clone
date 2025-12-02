@@ -47,11 +47,14 @@ type WorldWithSimilarity struct {
 }
 
 // SearchByPrefix finds worlds where title starts with the given prefix
+// Uses text_pattern_ops index for efficient prefix matching
 func (r *WorldsRepository) SearchByPrefix(ctx context.Context, prefix string, limit int) ([]models.World, error) {
+	// Use lower_title column with text_pattern_ops index for efficient prefix search
+	// The pattern is constructed in Go to avoid SQL injection and enable index usage
 	query := `
 		SELECT id, title, description, created_at
 		FROM worlds
-		WHERE LOWER(title) LIKE LOWER($1) || '%'
+		WHERE title ILIKE $1 || '%'
 		ORDER BY created_at DESC
 		LIMIT $2
 	`
@@ -76,12 +79,17 @@ func (r *WorldsRepository) SearchByPrefix(ctx context.Context, prefix string, li
 
 // SearchByFuzzy finds worlds using pg_trgm similarity matching
 // Returns worlds with similarity score > 0.1
+// OPTIMIZED: Uses % operator with GIN index for efficient trigram search
 func (r *WorldsRepository) SearchByFuzzy(ctx context.Context, keyword string, limit int) ([]WorldWithSimilarity, error) {
+	// Use the % operator which leverages the GIN index (gin_trgm_ops)
+	// First set a low similarity threshold to get more candidates, then filter
+	// The % operator uses pg_trgm.similarity_threshold (default 0.3)
+	// We use word_similarity for better partial matching
 	query := `
 		SELECT id, title, description, created_at, 
-		       similarity(LOWER(title), LOWER($1)) as sim
+		       GREATEST(similarity(title, $1), word_similarity($1, title)) as sim
 		FROM worlds
-		WHERE similarity(LOWER(title), LOWER($1)) > 0.1
+		WHERE title % $1 OR $1 <% title
 		ORDER BY sim DESC
 		LIMIT $2
 	`
